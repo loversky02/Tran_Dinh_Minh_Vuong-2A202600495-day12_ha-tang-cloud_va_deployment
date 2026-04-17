@@ -35,13 +35,15 @@ from pydantic import BaseModel, Field
 import uvicorn
 from utils.mock_llm import ask
 
+# Always import collections for fallback
+from collections import defaultdict, deque
+
 # Try to import Redis, fallback to in-memory if not available
 try:
     import redis
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    from collections import defaultdict, deque
 
 # ============================================================
 # Configuration
