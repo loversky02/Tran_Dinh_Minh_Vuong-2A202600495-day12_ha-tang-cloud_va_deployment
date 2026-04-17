@@ -1,0 +1,83 @@
+# ============================================================
+# Docker Compose - Full Stack for Local Development
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ──────────────────────────────────────
+  # AI Agent Service
+  # ──────────────────────────────────────
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: production-agent
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - PORT=8000
+      - AGENT_API_KEY=${AGENT_API_KEY:-demo-key-change-me}
+      - ALLOWED_ORIGINS=*
+      - RATE_LIMIT_PER_MINUTE=10
+      # Uncomment when Redis is added
+      # - REDIS_URL=redis://redis:6379/0
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - agent_network
+
+  # ──────────────────────────────────────
+  # Redis (Optional - for stateless sessions)
+  # Uncomment when implementing stateless design
+  # ──────────────────────────────────────
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: agent-redis
+  #   command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+  #   ports:
+  #     - "6379:6379"
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+  #   networks:
+  #     - agent_network
+
+  # ──────────────────────────────────────
+  # Nginx Load Balancer (Optional)
+  # Uncomment when scaling to multiple instances
+  # ──────────────────────────────────────
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: agent-nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - agent
+  #   networks:
+  #     - agent_network
+
+networks:
+  agent_network:
+    driver: bridge
+
+# ============================================================
+# Commands:
+#   Start:  docker compose up
+#   Stop:   docker compose down
+#   Logs:   docker compose logs -f agent
+#   Scale:  docker compose up --scale agent=3
+# ============================================================

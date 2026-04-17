@@ -1,109 +1,233 @@
-# Day 12 — Deployment: Đưa Agent Lên Cloud
+# Day 12 Lab - AI Agent Deployment
 
-> **AICB-P1 · VinUniversity 2026**  
-> Repository thực hành đi kèm bài giảng Day 12.  
-> Mỗi phần có ví dụ **cơ bản** (hiểu concept) và **chuyên sâu** (production-ready).
+**Course:** AICB-P1 · VinUniversity 2026  
+**Student:** Tran Dinh Minh Vuong  
+**Student ID:** 2A202600495  
+**Lab:** Deploy AI Agent to Production
 
 ---
 
-## Cấu Trúc Project
+## 📋 Project Overview
+
+This repository contains my work for Day 12 Lab - learning how to deploy an AI agent from localhost to production cloud platforms.
+
+**Learning Objectives:**
+- Understand difference between development and production code
+- Containerize AI agent with Docker
+- Deploy to cloud platforms (Railway/Render)
+- Implement API security (authentication, rate limiting, cost guard)
+- Design scalable and reliable systems
+
+---
+
+## 🗂 Repository Structure
 
 ```
-day12_ha-tang-cloud_va_deployment/
-├── 01-localhost-vs-production/     # Section 1: Dev ≠ Production
-│   ├── develop/                      #   Agent "đúng kiểu localhost"
-│   └── production/                   #   12-Factor compliant agent
-│
-├── 02-docker/                      # Section 2: Containerization
-│   ├── develop/                      #   Dockerfile đơn giản
-│   └── production/                   #   Multi-stage + Docker Compose stack
-│
-├── 03-cloud-deployment/            # Section 3: Cloud Options
-│   ├── railway/                    #   Deploy Railway (< 5 phút)
-│   ├── render/                     #   Deploy Render + render.yaml
-│   └── production-cloud-run/         #   GCP Cloud Run + CI/CD
-│
-├── 04-api-gateway/                 # Section 4: Security
-│   ├── develop/                      #   API Key authentication
-│   └── production/                   #   JWT + Rate Limiting + Cost Guard
-│
-├── 05-scaling-reliability/         # Section 5: Scale & Reliability
-│   ├── develop/                      #   Health check + graceful shutdown
-│   └── production/                   #   Stateless + Redis + Nginx LB
-│
-├── 06-lab-complete/                # Lab 12: Production-ready agent
-│   └── (full project kết hợp tất cả)
-│
-└── utils/                          # Mock LLM dùng chung (không cần API key)
+.
+├── 01-localhost-vs-production/    # Part 1: Dev vs Prod comparison
+│   ├── develop/                   # Basic version with anti-patterns
+│   └── production/                # Production-ready version
+├── 02-docker/                     # Part 2: Docker containerization
+│   ├── develop/                   # Basic Dockerfile
+│   └── production/                # Multi-stage build + compose
+├── 03-cloud-deployment/           # Part 3: Cloud deployment configs
+│   ├── railway/
+│   ├── render/
+│   └── production-cloud-run/
+├── 04-api-gateway/                # Part 4: API security
+│   ├── develop/                   # Basic auth
+│   └── production/                # JWT + rate limit + cost guard
+├── 05-scaling-reliability/        # Part 5: Scaling & reliability
+│   ├── develop/                   # Basic health checks
+│   └── production/                # Full stack with load balancer
+├── 06-lab-complete/               # Part 6: Final production agent
+│   └── [Will be completed]
+├── utils/                         # Shared utilities
+│   └── mock_llm.py               # Mock LLM for testing
+├── MISSION_ANSWERS.md            # Answers to all exercises
+├── DEPLOYMENT.md                 # Deployment information
+├── CODE_LAB.md                   # Lab instructions
+├── DAY12_DELIVERY_CHECKLIST.md   # Submission checklist
+└── README.md                     # This file
 ```
 
 ---
 
-## 🚀 Bắt Đầu Nhanh
+## 🚀 Progress
 
-**Muốn thử ngay?** → [QUICK_START.md](QUICK_START.md) (5 phút)
+- [x] **Part 1:** Localhost vs Production (COMPLETED ✅)
+  - Identified 7 anti-patterns in develop code
+  - Compared with production-ready version
+  - Learned about env vars, health checks, graceful shutdown
 
-**Muốn học kỹ?** → [CODE_LAB.md](CODE_LAB.md) (3-4 giờ)
+- [ ] **Part 2:** Docker Containerization (TODO)
+  - Basic Dockerfile
+  - Multi-stage builds
+  - Docker Compose orchestration
 
-## Cách Học
+- [ ] **Part 3:** Cloud Deployment (TODO)
+  - Deploy to Railway/Render
+  - Configure environment variables
+  - Test public URL
 
-| Bước | Làm gì |
-|------|--------|
-| 0 | **[Khuyến nghị]** Đọc [QUICK_START.md](QUICK_START.md) để thử nhanh |
-| 1 | Đọc [CODE_LAB.md](CODE_LAB.md) để hiểu chi tiết |
-| 2 | Chạy ví dụ **basic** trước — hiểu concept |
-| 3 | So sánh với ví dụ **advanced** — thấy sự khác biệt |
-| 4 | Tự làm Lab 06 từ đầu trước khi xem solution |
-| 5 | Tham khảo [QUICK_REFERENCE.md](QUICK_REFERENCE.md) khi cần |
-| 6 | Xem [TROUBLESHOOTING.md](TROUBLESHOOTING.md) khi gặp lỗi |
+- [ ] **Part 4:** API Security (TODO)
+  - API key authentication
+  - JWT tokens
+  - Rate limiting
+  - Cost guard
+
+- [ ] **Part 5:** Scaling & Reliability (TODO)
+  - Health checks
+  - Graceful shutdown
+  - Stateless design
+  - Load balancing
+
+- [ ] **Part 6:** Final Project (TODO)
+  - Build production-ready agent from scratch
+  - Deploy to cloud
+  - Full testing
 
 ---
 
-## Yêu Cầu
+## 🛠 Setup Instructions
 
+### Prerequisites
+
+- Python 3.11+
+- Docker & Docker Compose
+- Git
+- (Optional) Railway CLI or Render account
+
+### Local Development
+
+1. **Clone repository:**
 ```bash
-python 3.11+
-docker & docker compose
+git clone https://github.com/your-username/day12-agent-deployment.git
+cd day12-agent-deployment
 ```
 
-Mỗi folder có `requirements.txt` riêng. Không cần API key thật — các ví dụ dùng **mock LLM** để chạy offline.
+2. **Part 1 - Test develop version:**
+```bash
+cd 01-localhost-vs-production/develop
+pip install -r requirements.txt
+python app.py
+
+# Test
+curl "http://localhost:8000/ask?question=Hello" -X POST
+```
+
+3. **Part 1 - Test production version:**
+```bash
+cd ../production
+cp .env.example .env
+pip install -r requirements.txt
+python app.py
+
+# Test health check
+curl http://localhost:8000/health
+
+# Test readiness
+curl http://localhost:8000/ready
+
+# Test API
+curl http://localhost:8000/ask -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Hello from production"}'
+```
 
 ---
 
-## Sections
+## 📝 Key Learnings
 
-| # | Folder | Concept chính |
-|---|--------|--------------|
-| 1 | `01-localhost-vs-production` | Dev/prod gap, 12-factor, secrets |
-| 2 | `02-docker` | Dockerfile, multi-stage, docker-compose |
-| 3 | `03-cloud-deployment` | Railway, Render, Cloud Run |
-| 4 | `04-api-gateway` | Auth, rate limiting, cost protection |
-| 5 | `05-scaling-reliability` | Health check, stateless, rolling deploy |
-| 6 | `06-lab-complete` | **Full production agent** |
+### Part 1: Development vs Production
+
+**Anti-patterns found in develop code:**
+1. Hardcoded secrets (API keys in code)
+2. No config management
+3. Print() instead of proper logging
+4. No health check endpoints
+5. Fixed port number
+6. Localhost-only binding
+7. Debug mode always on
+
+**Production best practices:**
+- ✅ Environment variables for config
+- ✅ Structured JSON logging
+- ✅ Health check endpoints (`/health`, `/ready`)
+- ✅ Graceful shutdown (SIGTERM handler)
+- ✅ 0.0.0.0 binding for containers
+- ✅ Dynamic port from env vars
+- ✅ CORS configuration
+- ✅ No secrets in code/logs
 
 ---
 
-## 📚 Lab Materials
+## 🧪 Testing
 
-Chúng tôi đã chuẩn bị đầy đủ tài liệu hướng dẫn:
+### Part 1 Tests
 
-### Cho Sinh Viên
+**Develop version:**
+```bash
+curl "http://localhost:8000/ask?question=Hello" -X POST
+# Expected: {"answer": "Mock response..."}
+```
 
-| Tài liệu | Mô tả | Thời gian |
-|----------|-------|-----------|
-| **[CODE_LAB.md](CODE_LAB.md)** | Hướng dẫn lab chi tiết từng bước | 3-4 giờ |
-| **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** | Cheat sheet các lệnh và patterns | Tra cứu |
-| **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** | Giải quyết lỗi thường gặp | Khi cần |
+**Production version:**
+```bash
+# Health check
+curl http://localhost:8000/health
+# Expected: {"status": "ok", "uptime_seconds": X, ...}
 
-### Cho Giảng Viên
+# Readiness check
+curl http://localhost:8000/ready
+# Expected: {"ready": true}
 
-| Tài liệu | Mô tả |
-|----------|-------|
-| **[INSTRUCTOR_GUIDE.md](INSTRUCTOR_GUIDE.md)** | Hướng dẫn chấm điểm và đánh giá |
+# API call
+curl http://localhost:8000/ask -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Test"}'
+# Expected: {"question": "Test", "answer": "...", "model": "gpt-4o-mini"}
+```
 
-### Cách Sử Dụng
+---
 
-1. **Trước lab:** Đọc [CODE_LAB.md](CODE_LAB.md) để hiểu tổng quan
-2. **Trong lab:** Làm theo từng Part, tham khảo [QUICK_REFERENCE.md](QUICK_REFERENCE.md)
-3. **Gặp lỗi:** Xem [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
-4. **Sau lab:** Nộp Part 6 Final Project để chấm điểm
+## 🌐 Deployment
+
+**Status:** 🚧 Not yet deployed
+
+**Target Platform:** Railway (free $5 credit)
+
+**Planned URL:** `https://vuong-ai-agent.railway.app`
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment information.
+
+---
+
+## 📚 Resources
+
+- [Lab Instructions](CODE_LAB.md)
+- [Mission Answers](MISSION_ANSWERS.md)
+- [Deployment Info](DEPLOYMENT.md)
+- [Submission Checklist](DAY12_DELIVERY_CHECKLIST.md)
+- [12-Factor App](https://12factor.net/)
+- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+- [FastAPI Deployment](https://fastapi.tiangolo.com/deployment/)
+
+---
+
+## 📧 Contact
+
+**Student:** Tran Dinh Minh Vuong  
+**Student ID:** 2A202600495  
+**Course:** AICB-P1 · VinUniversity 2026
+
+---
+
+## 📄 License
+
+This is a student project for educational purposes.
+
+---
+
+**Last Updated:** 17/04/2026  
+**Status:** Part 1 Completed ✅ | Parts 2-6 In Progress 🚧

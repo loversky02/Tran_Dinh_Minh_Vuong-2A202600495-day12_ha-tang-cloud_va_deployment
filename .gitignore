@@ -1,36 +1,71 @@
-# ── Secrets ──────────────────────────────────────────────
+# ============================================================
+# .gitignore - Files to exclude from Git
+# ============================================================
+
+# Environment files - NEVER commit secrets!
 .env
 .env.local
-.env.production
-.env.*
-!.env.example
+.env.*.local
 
-# ── Python ──────────────────────────��────────────────────
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+*.egg
 *.egg-info/
 dist/
 build/
-.pytest_cache/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.whl
 
-# ── Virtual environments ──────────────────────────────────
+# Virtual environments
 venv/
 env/
+ENV/
 .venv/
 
-# ── IDE ──────────────────────────────��────────────────────
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+.DS_Store
 
-# ── OS ────────────────────────────────────────────────────
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
 .DS_Store
 Thumbs.db
 
-# ── Docker volumes (local dev) ─────────────────────��──────
-data/
-volumes/
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Docker
+.dockerignore
+
+# Keep these files
+!.env.example
+!.gitignore

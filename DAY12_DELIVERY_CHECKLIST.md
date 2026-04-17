@@ -1,8 +1,8 @@
 #  Delivery Checklist — Day 12 Lab Submission
 
-> **Student Name:** _________________________  
-> **Student ID:** _________________________  
-> **Date:** _________________________
+> **Student Name:** Tran Dinh Minh Vuong  
+> **Student ID:** 2A202600495  
+> **Date:** 17/04/2026
 
 ---
 

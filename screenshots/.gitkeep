@@ -1,0 +1,8 @@
+# Screenshots folder
+
+Thêm screenshots vào đây:
+- dashboard.png - Deployment dashboard
+- running.png - Service running logs
+- health-check.png - Health check test
+- api-test.png - API test results
+- rate-limiting.png - Rate limiting in action
