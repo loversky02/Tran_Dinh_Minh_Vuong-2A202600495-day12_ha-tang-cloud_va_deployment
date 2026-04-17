@@ -33,7 +33,7 @@ from fastapi.security.api_key import APIKeyHeader
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import uvicorn
-from utils.mock_llm import ask
+from utils.llm import ask, get_llm_info
 
 # Always import collections for fallback
 from collections import defaultdict, deque
@@ -328,6 +328,7 @@ def metrics():
         "environment": ENVIRONMENT,
         "version": "2.0.0",
         "rate_limiter": "redis" if redis_client else "in-memory",
+        "llm": get_llm_info(),
     }
 
 # ============================================================
