@@ -4,14 +4,15 @@ Day 12 Lab - Final Project
 
 Features:
   ✅ Environment-based configuration
-  ✅ Structured JSON logging
+  ✅ Structured JSON logging with request IDs
   ✅ Health & readiness checks
   ✅ Graceful shutdown
   ✅ API key authentication
-  ✅ Rate limiting (in-memory)
+  ✅ Rate limiting (Redis-backed, scalable)
   ✅ Input validation
   ✅ Security headers
   ✅ CORS configuration
+  ✅ Global error handling
 
 Deploy: Railway
 URL: https://wonderful-delight-production-9390.up.railway.app
@@ -21,16 +22,26 @@ import time
 import signal
 import logging
 import json
+import uuid
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
-from collections import defaultdict, deque
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import uvicorn
 from utils.mock_llm import ask
+
+# Try to import Redis, fallback to in-memory if not available
+try:
+    import redis
+    REDIS_AVAILABLE = True
+except ImportError:
+    REDIS_AVAILABLE = False
+    from collections import defaultdict, deque
 
 # ============================================================
 # Configuration
@@ -40,6 +51,7 @@ PORT = int(os.getenv("PORT", 8000))
 API_KEY = os.getenv("AGENT_API_KEY", "demo-key-change-me")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_MINUTE", "10"))
+REDIS_URL = os.getenv("REDIS_URL", None)
 
 # ============================================================
 # Logging
@@ -57,8 +69,20 @@ START_TIME = time.time()
 _is_ready = False
 _in_flight_requests = 0
 
-# Rate limiter (in-memory, simple sliding window)
-_rate_limit_windows = defaultdict(deque)
+# Redis client (if available)
+redis_client: Optional[redis.Redis] = None
+if REDIS_AVAILABLE and REDIS_URL:
+    try:
+        redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+        redis_client.ping()
+        logger.info("Redis connected successfully")
+    except Exception as e:
+        logger.warning(f"Redis connection failed: {e}. Falling back to in-memory rate limiting.")
+        redis_client = None
+
+# Fallback: In-memory rate limiter
+if not redis_client:
+    _rate_limit_windows = defaultdict(deque)
 
 # ============================================================
 # Lifecycle Management
@@ -116,11 +140,17 @@ app.add_middleware(
 
 @app.middleware("http")
 async def track_requests(request: Request, call_next):
-    """Track in-flight requests for graceful shutdown"""
+    """Track in-flight requests for graceful shutdown and add request ID"""
     global _in_flight_requests
     _in_flight_requests += 1
+    
+    # Generate unique request ID
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    
     try:
         response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
         return response
     finally:
         _in_flight_requests -= 1
@@ -154,21 +184,46 @@ def verify_api_key(api_key: str = Security(api_key_header)) -> str:
 # Rate Limiting
 # ============================================================
 def check_rate_limit(user_id: str = "default"):
-    """Simple in-memory rate limiter"""
-    now = time.time()
-    window = _rate_limit_windows[user_id]
-    
-    # Remove old timestamps
-    while window and window[0] < now - 60:
-        window.popleft()
-    
-    if len(window) >= RATE_LIMIT:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Rate limit exceeded. Max {RATE_LIMIT} requests per minute."
-        )
-    
-    window.append(now)
+    """
+    Rate limiter with Redis support (scalable) and in-memory fallback.
+    Uses sliding window algorithm.
+    """
+    if redis_client:
+        # Redis-backed rate limiting (production-ready, scalable)
+        key = f"rate_limit:{user_id}"
+        now = time.time()
+        
+        # Remove old timestamps
+        redis_client.zremrangebyscore(key, 0, now - 60)
+        
+        # Count requests in current window
+        count = redis_client.zcard(key)
+        
+        if count >= RATE_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded. Max {RATE_LIMIT} requests per minute."
+            )
+        
+        # Add current timestamp
+        redis_client.zadd(key, {str(now): now})
+        redis_client.expire(key, 60)
+    else:
+        # Fallback: In-memory rate limiting
+        now = time.time()
+        window = _rate_limit_windows[user_id]
+        
+        # Remove old timestamps
+        while window and window[0] < now - 60:
+            window.popleft()
+        
+        if len(window) >= RATE_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded. Max {RATE_LIMIT} requests per minute."
+            )
+        
+        window.append(now)
 
 # ============================================================
 # Request Models
@@ -201,11 +256,14 @@ async def ask_agent(
     Protected endpoint - requires API key
     Rate limited to prevent abuse
     """
+    request_id = request.state.request_id
+    
     # Rate limiting
     check_rate_limit("default")
     
-    # Log request
+    # Log request with request ID
     logger.info(json.dumps({
+        "request_id": request_id,
         "event": "request",
         "question_length": len(body.question),
         "client_ip": request.client.host,
@@ -214,8 +272,9 @@ async def ask_agent(
     # Call LLM
     answer = ask(body.question)
     
-    # Log response
+    # Log response with request ID
     logger.info(json.dumps({
+        "request_id": request_id,
         "event": "response",
         "answer_length": len(answer),
     }))
@@ -225,6 +284,7 @@ async def ask_agent(
         "answer": answer,
         "platform": "Railway",
         "version": "2.0.0",
+        "request_id": request_id,
     }
 
 @app.get("/health")
@@ -265,7 +325,33 @@ def metrics():
         "in_flight_requests": _in_flight_requests,
         "environment": ENVIRONMENT,
         "version": "2.0.0",
+        "rate_limiter": "redis" if redis_client else "in-memory",
     }
+
+# ============================================================
+# Global Error Handler
+# ============================================================
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Handle all unhandled exceptions"""
+    request_id = getattr(request.state, "request_id", "unknown")
+    
+    logger.error(json.dumps({
+        "request_id": request_id,
+        "event": "unhandled_error",
+        "error": str(exc),
+        "type": type(exc).__name__,
+        "path": request.url.path,
+    }))
+    
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "request_id": request_id,
+            "message": "An unexpected error occurred. Please try again later."
+        }
+    )
 
 # ============================================================
 # Signal Handlers
