@@ -27,6 +27,10 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import Optional
 
+# Load .env file for local development
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Request, Response, Security, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
